@@ -2,8 +2,6 @@ services:
   - type: web
     name: streamlit-recommender
     env: python
-    buildCommand: |
-      curl -Ls https://astral.sh/uv/install.sh | sh
-      uv pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
     plan: free

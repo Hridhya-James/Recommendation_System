@@ -15,7 +15,8 @@ def recommend(customer_id : str , min_support : float):
     try:
         rules_df = load_rules(merged_df, min_support)
         if rules_df.empty:
-            return {"message": f"No association rules found for support={min_support}"}
+            return {"message": f"No association rules found for customer {customer_id} at min_support={min_support}"}
+
     except Exception as e:
         return {"error": f"Apriori failed: {str(e)}"}
 

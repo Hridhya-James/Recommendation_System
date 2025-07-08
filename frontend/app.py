@@ -6,7 +6,7 @@ st.title("Recommendation System")
 customer_id=st.text_input("Enter the customer ID:")
 
 st.sidebar.header("Apriori Settings")
-min_support = st.sidebar.selectbox("Select Minimum Support",options=[0.001,0.002,0.003,0.004,0.005],index=1,format_func=lambda x:f"{x:.3f}")
+min_support = st.sidebar.selectbox("Select Minimum Support",options=[0.002,0.0025,0.003,0.0035,0.004],index=1,format_func=lambda x:f"{x:.4f}")
 
 if st.button("Get Recommendation"):
     if customer_id:
@@ -28,7 +28,17 @@ if st.button("Get Recommendation"):
                     category = data['Category_recommend'].get(products,"unknown")
                     st.write(f" {products} --- Category : {category}")
             else:
-                st.error(f"Error {response.status_code}: {response.text}")
+                try:
+                    error_response = response.json()
+                    if "message" in error_response:
+                        st.warning(error_response["message"])
+                    elif "error" in error_response:
+                        st.error(error_response["error"])
+                    else:
+                        st.error(f"Error {response.status_code}: {response.text}")
+                except Exception:
+                    st.error(f"Error {response.status_code}: {response.text}")
+
         except Exception as e:
             st.error(f"Failed to connect to fastapi : {e}")
         

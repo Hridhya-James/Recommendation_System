@@ -12,7 +12,13 @@ def recommend(customer_id : str , min_support : float):
     order_line = pd.read_csv('order_line.csv')
     order_info = pd.read_csv("order_info.csv")
     merged_df = pd.merge(order_info, order_line, on='Order ID', how='inner')
-    rules_df = load_rules(merged_df,min_support_value=min_support)
+    try:
+        rules_df = load_rules(merged_df, min_support)
+        if rules_df.empty:
+            return {"message": f"No association rules found for support={min_support}"}
+    except Exception as e:
+        return {"error": f"Apriori failed: {str(e)}"}
+
     print(order_line.columns)
 
 

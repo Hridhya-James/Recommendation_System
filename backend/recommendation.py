@@ -11,8 +11,14 @@ def load_rules(merged_df,min_support_value=0.002):
     # Mine frequent itemsets
     frequent_itemsets = apriori(df_trans, min_support=min_support_value, use_colnames=True)
 
+    if frequent_itemsets.empty:
+        return pd.DataFrame()
+
     # Generate association rules
-    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.0)
+    try:
+        rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.0)
+    except ValueError:
+        return pd.DataFrame()
     return rules
 
 def get_recommend(customer_product,rules,top_n=3):

@@ -17,13 +17,13 @@ if st.button("Get Recommendation"):
 
             if response.status_code == 200:
                 data = response.json()
-                
-
-                if "message" in data:
-                    st.warning(data["message"])
                 if "debug" in data:
                     st.subheader("🔍 Debug Info")
                     st.json(data["debug"])
+
+                if "message" in data:
+                    st.warning(data["message"])
+                
 
                 elif "customer_id" in data:
                     st.write(f"Customer ID: {data['customer_id']}")

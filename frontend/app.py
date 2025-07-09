@@ -17,7 +17,7 @@ if st.button("Get Recommendation"):
 
             if response.status_code == 200:
                 data = response.json()
-                st.write("DEBUG JSON:", data)
+                
 
                 if "message" in data:
                     st.warning(data["message"])

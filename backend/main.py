@@ -33,12 +33,7 @@ def recommend(customer_id : str , min_support : float):
     category_map_recommend = {}
     customer_products = set(merged_df[merged_df['Customer ID'] == customer_id]['Product ID'])
 
-    customer_products = {
-        p for p in customer_products 
-        if p and str(p).lower() not in ['nan', 'none', ''] and pd.notna(p)
-    }
-    print(customer_products)
-    if len(customer_products) > 0:
+    if customer_products:
         # Get category for bought products
         for product in customer_products:
             category = merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
@@ -46,19 +41,17 @@ def recommend(customer_id : str , min_support : float):
 
         print(f"Customer {customer_id} bought: {customer_products}")
         recommended = get_recommend(customer_products, rules_df)
-        if recommended:
-            for product in recommended:
-                category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
-                category_map_recommend.setdefault(category, []).append(product)
+        for product in recommended:
+            category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
+            category_map_recommend.setdefault(category, []).append(product)
         
-        return {"customer_id" : customer_id,"recommended product" :recommended,"Products bought" : list(customer_products),"Category_bought":category_map_bought,"Category_recommend":category_map_recommend}
+        return {"customer_id" : customer_id,"recommended product" : recommended,"Products bought" : customer_products,"Category_bought":category_map_bought,"Category_recommend":category_map_recommend}
 
     else:
         recommended = get_general_recommendations(rules_df)
-        if recommended:
-            for product in recommended:
-                category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
-                category_map_recommend.setdefault(category, []).append(product)
+        for product in recommended:
+            category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
+            category_map_recommend.setdefault(category, []).append(product)
 
         return {"customer_id" : customer_id,"general_suggestions": recommended,"Category_recommend":category_map_recommend}
 

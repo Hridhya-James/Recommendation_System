@@ -17,57 +17,24 @@ if st.button("Get Recommendation"):
 
             if response.status_code == 200:
                 data = response.json()
-                if "debug" in data:
-                    st.subheader("🔍 Debug Info")
-                    st.json(data["debug"])
-
                 if "message" in data:
                     st.warning(data["message"])
-                
-
                 elif "customer_id" in data:
                     st.write(f"Customer ID: {data['customer_id']}")
-
-                    if data['Products bought']:
-                        st.subheader("Products that customer already purchased:")
-                        category_map = {}
-                        for prod in data['Products bought']:
-                            category = data['Category_bought'].get(prod, "unknown")
-                            category_map.setdefault(category, []).append(prod)
-
-                        for category, products in category_map.items():
-                            st.write(f"{category}: {', '.join(products)}")
-
-                        
-                        st.subheader("Recommended Products:")
-                        if data['recommended product']:
-                            category_map = {}
-                            for product in data['recommended product']:
-                                category = data['Category_recommend'].get(product, "unknown")
-                                category_map.setdefault(category, []).append(product)
-
-                            for category, products in category_map.items():
-                                st.write(f"{category}: {', '.join(products)}")
-
-                        else:
-                            st.info("No recommendations could be generated for this customer with the current Apriori settings.")
-
-
-                    elif data.get('general_suggestions'):
-                        st.warning("No previous purchases found for this customer.")
-                        st.subheader("General Product Suggestions (based on popular items):")
-                        category_map = {}
-                        for prod in data['general_suggestions']:
-                            category = data['Category_recommend'].get(prod, "unknown")
-                            category_map.setdefault(category, []).append(prod)
-
-                        for category, products in category_map.items():
-                            st.write(f"{category}: {', '.join(products)}")
-
-                        
+                    st.subheader("Products that customer already purchased:")
+                    for prod in data['Products bought']:
+                        category = data['Category_bought'].get(prod, "unknown")
+                        st.write(f"{prod} --- Category: {category}")
+                    
+                    st.subheader("Recommended Products:")
+                    if data['recommended product']:
+                        for products in data['recommended product']:
+                            category = data['Category_recommend'].get(products, "unknown")
+                            st.write(f"{products} --- Category: {category}")
+                    else:
+                        st.info("No recommendations could be generated for this customer with the current Apriori settings.")
                 else:
                     st.error("Unexpected response structure.")
-
 
             else:
                 try:
@@ -84,7 +51,7 @@ if st.button("Get Recommendation"):
         except Exception as e:
             st.error(f"Failed to connect to fastapi : {e}")
     else:
-        st.write("Error:Enter The Customer ID")
+        st.write("Wrong customer ID")
 
         #customer_products = set(merged_df[merged_df['Customer ID'] == customer_id]['Product ID'])
         #st.write(f"Customer {customer_id} previously purchased:")
@@ -98,3 +65,5 @@ if st.button("Get Recommendation"):
         #        st.write(f" {products}")
         #else:
         #    st.write("There is no recommended products")
+
+

@@ -23,3 +23,20 @@ def get_recommend(customer_product,rules,top_n=3):
         if len(recommend)>= top_n:
             break
     return list(recommend)[:top_n]
+
+def get_general_recommendations(rules,top_n=3):
+    if rules.empty:
+        return []
+    
+    # Get all products from consequents, sorted by confidence
+    recommendations = set()
+    
+    # Sort rules by confidence (higher confidence = better recommendation)
+    sorted_rules = rules.sort_values(by='confidence', ascending=False)
+    
+    for _, row in sorted_rules.iterrows():
+        recommendations.update(row['consequents'])
+        if len(recommendations) >= top_n:
+            break
+    
+    return list(recommendations)[:top_n]

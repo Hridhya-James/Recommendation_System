@@ -32,26 +32,46 @@ def recommend(customer_id : str , min_support : float):
     category_map_bought = {}
     category_map_recommend = {}
     customer_products = set(merged_df[merged_df['Customer ID'] == customer_id]['Product ID'])
+    print(customer_products)
 
-    if customer_products:
+    if bool(customer_products):
         # Get category for bought products
         for product in customer_products:
+            print(product)
             category = merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
             category_map_bought.setdefault(category, []).append(product)
 
         print(f"Customer {customer_id} bought: {customer_products}")
         recommended = get_recommend(customer_products, rules_df)
         for product in recommended:
-            category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
+            match = merged_df[merged_df['Product ID'] == product]
+            if not match.empty:
+                category = match['Category'].iloc[0]
+            else:
+                category = "unknown"
+
             category_map_recommend.setdefault(category, []).append(product)
         
-        return {"customer_id" : customer_id,"recommended product" : recommended,"Products bought" : customer_products,"Category_bought":category_map_bought,"Category_recommend":category_map_recommend}
+        return {"customer_id" : customer_id,"recommended product" : recommended,"Products bought" : customer_products,"Category_bought":category_map_bought,"Category_recommend":category_map_recommend,"debug": {
+        "customer_products": list(customer_products),
+        "len": len(customer_products),
+        "type": str(type(customer_products))
+    }}
 
     else:
         recommended = get_general_recommendations(rules_df)
         for product in recommended:
-            category=merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
+            match = merged_df[merged_df['Product ID'] == product]
+            if not match.empty:
+                category = match['Category'].iloc[0]
+            else:
+                category = "unknown"
+
             category_map_recommend.setdefault(category, []).append(product)
 
-        return {"customer_id" : customer_id,"general_suggestions": recommended,"Category_recommend":category_map_recommend}
+        return {"customer_id" : customer_id,"general_suggestions": recommended,"Category_recommend":category_map_recommend,"debug": {
+        "customer_products": list(customer_products),
+        "len": len(customer_products),
+        "type": str(type(customer_products))
+    }}
 

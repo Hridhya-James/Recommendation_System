@@ -21,6 +21,10 @@ if st.button("Get Recommendation"):
 
                 if "message" in data:
                     st.warning(data["message"])
+                if "debug" in data:
+                    st.subheader("🔍 Debug Info")
+                    st.json(data["debug"])
+
                 elif "customer_id" in data:
                     st.write(f"Customer ID: {data['customer_id']}")
 

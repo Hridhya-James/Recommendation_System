@@ -21,35 +21,62 @@ if st.button("Get Recommendation"):
                     st.warning(data["message"])
                 elif "customer_id" in data:
                     st.write(f"Customer ID: {data['customer_id']}")
-                    if "Products bought" in data:
+                    if "Products_bought" in data:
                         st.subheader("Products that customer already purchased:")
+
+                        # Convert category -> products to product -> category
+                        product_to_category = {}
+                        for category, products in data['Category_bought'].items():
+                            for product in products:
+                                product_to_category[product] = category
+
+                        # Group by category
                         category_map = {}
-                        for prod in data['Products bought']:
-                            category = data['Category_bought'].get(prod, "unknown")
+                        for prod in data['Products_bought']:
+                            category = product_to_category.get(prod, "unknown")
                             category_map.setdefault(category, []).append(prod)
 
                         for category, products in category_map.items():
                             st.write(f"{category}: {', '.join(products)}")
-                        
-                        st.subheader("Recommended Products:")
-                        category_map = {}
-                        if data['recommended product']:
-                            for products in data['recommended product']:
-                                category = data['Category_bought'].get(products, "unknown")
-                                category_map.setdefault(category, []).append(products)
+                        if data['recommended_product']:
+                                st.subheader("Recommended Products:")
 
-                            for category, products in category_map.items():
-                                st.write(f"{category}: {', '.join(products)}")
+    # Build product → category mapping from Category_recommend
+                                product_to_category = {}
+                                for category, products in data['Category_recommend'].items():
+                                    for product in products:
+                                        product_to_category[product] = category
+
+                                # Group recommended products by category
+                                category_map = {}
+                                for prod in data['recommended_product']:
+                                    category = product_to_category.get(prod, "unknown")
+                                    category_map.setdefault(category, []).append(prod)
+
+                                # Display grouped output
+                                for category, products in category_map.items():
+                                    st.write(f"{category}: {', '.join(products)}")
                         else:
-                            st.info("No recommendations could be generated for this customer with the current Apriori settings.")
-                    elif "generic product" in data:
+                            st.warning("No Recommendation for the apriori settings")
+                    elif "generic_product" in data:
+                        st.subheader("Recommended Products for New Customer:")
+
+                        # Build product → category mapping from Category_recommend
+                        product_to_category = {}
+                        for category, products in data['Category_recommend'].items():
+                            for product in products:
+                                product_to_category[product] = category
+
+                        # Group generic products by category
                         category_map = {}
-                        for products in data['recommended product']:
-                            category = data['Category_bought'].get(products, "unknown")
-                            category_map.setdefault(category, []).append(products)
+                        for prod in data['generic_product']:  # ✅ use correct key
+                            category = product_to_category.get(prod, "unknown")
+                            category_map.setdefault(category, []).append(prod)
 
                         for category, products in category_map.items():
                             st.write(f"{category}: {', '.join(products)}")
+
+
                 else:
                     st.error("Unexpected response structure.")
 

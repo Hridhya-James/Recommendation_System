@@ -1,14 +1,22 @@
 from fastapi import FastAPI
+from database import engine
 from recommendation import load_rules,get_recommend,get_general_recommendations
 import pandas as pd
+from sqlalchemy import text
 
 
 app = FastAPI()
 
 @app.get("/recommend/{customer_id}")
 def recommend(customer_id : str , min_support : float):
-    order_line = pd.read_csv('order_line.csv')
-    order_info = pd.read_csv("order_info.csv")
+    try:
+        with engine.connect() as conn:
+            order_line = pd.read_sql(text("SELECT * FROM order_line_table"), conn)
+            order_info = pd.read_sql(text("SELECT * FROM order_info_table"), conn)
+    except Exception as e:
+        return {"error": f"connection failed: {str(e)}"}
+    
+
     merged_df = pd.merge(order_info, order_line, on='Order ID', how='inner')
     try:
         rules_df = load_rules(merged_df, min_support)

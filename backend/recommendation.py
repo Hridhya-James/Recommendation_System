@@ -32,7 +32,7 @@ def get_general_recommendations(rules,top_n=3):
     recommendations = set()
     
     # Sort rules by confidence (higher confidence = better recommendation)
-    sorted_rules = rules.sort_values(by='confidence', ascending=False)
+    sorted_rules = rules.sort_values(by='confidence', ascending=False) #confidence :How often the rule is true, given the antecedent is true.()
     
     for _, row in sorted_rules.iterrows():
         recommendations.update(row['consequents'])

@@ -12,7 +12,7 @@ min_support = st.sidebar.selectbox("Select Minimum Support",options=[0.002,0.002
 if st.button("Get Recommendation"):
     if customer_id:
         try:
-            fastapi_url = f"http://127.0.0.1:8000/recommend/{customer_id}?min_support={min_support}"
+            fastapi_url = f"https://fastapi-backend-zdku.onrender.com/recommend/{customer_id}?min_support={min_support}"
             response = requests.get(fastapi_url)
 
             if response.status_code == 200:

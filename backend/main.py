@@ -1,19 +1,42 @@
-from fastapi import FastAPI
-from recommendation import load_rules,get_recommend,get_general_recommendations
+from fastapi import FastAPI, Query
+from recommendation import load_rules,get_recommend,get_general_recommendations,get_recommendations
+from data_preprocessor import DataPreprocessor
+from sasrec_model import SASRec
 import pandas as pd
-
-
+import pickle
+import torch
 
 app = FastAPI()
 
-@app.get("/recommend/{customer_id}")
-def recommend(customer_id : str , min_support : float):
-    
-    order_line = pd.read_csv('order_info.csv')
-    order_info = pd.read_csv('order_line.csv')
+sasrec_model = None
+preprocessor = None
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+order_info = pd.read_csv("order_info.csv")
+order_line = pd.read_csv("order_line.csv")
+merged_df = pd.merge(order_info, order_line, on="Order ID", how="inner")
+
+
+@app.on_event("startup")
+def load_model():
+    global sasrec_model, preprocessor
+
+    num_users = 992
+    num_items = 199
+
+    sasrec_model = SASRec(num_users=num_users,num_items=num_items,hidden_size=64,num_blocks=2,num_heads=1,dropout_rate=0.5,max_seq_len=50).to(device)
+    sasrec_model.load_state_dict(torch.load("sasrec_weights.pth", map_location=device))
+    sasrec_model.eval()
+
+    with open("preprocessor.pkl", "rb") as f:
+        preprocessor = pickle.load(f)
+
+    print("SASRec model and preprocessor loaded.")
+
+@app.get("/recommend/apriori/{customer_id}")
+def recommend(customer_id: str, min_support: float = Query(...)):
     
 
-    merged_df = pd.merge(order_info, order_line, on='Order ID', how='inner')
     try:
         rules_df = load_rules(merged_df, min_support)
         if rules_df.empty:
@@ -54,3 +77,58 @@ def recommend(customer_id : str , min_support : float):
             category = merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
             category_map_generic.setdefault(category, []).append(product)
         return {"customer_id" : customer_id,"generic_product" : generic_recommended,"Category_recommend":category_map_generic}
+    
+@app.get("/recommend/sasrec/{customer_id}")
+def recommend_sasrec(customer_id: str):
+    global sasrec_model, preprocessor
+    id_exists = customer_id in merged_df['Customer ID'].values
+    
+    if id_exists:
+        category_map_recommended = {}
+        category_map_bought = {}
+
+        
+        customer_data = merged_df[merged_df["Customer ID"] == customer_id].copy()
+        customer_data = customer_data.sort_values("Date")
+
+        
+        customer_products = customer_data["Product ID"].unique().tolist()
+
+       
+        for product in customer_products:
+            category = customer_data[customer_data["Product ID"] == product]["Category"].head(1).item()
+            category_map_bought.setdefault(category, []).append(product)
+
+    
+        try:
+            item_sequence = preprocessor.item_encoder.transform(customer_products) + 1
+            item_sequence = item_sequence.tolist()
+        except ValueError:
+            return {"message": "No known product history for customer"}
+
+        recommendations = get_recommendations(sasrec_model, item_sequence, preprocessor.item_encoder, device, top_k=10)
+
+        for product in recommendations:
+            category = merged_df[merged_df["Product ID"] == product]["Category"].head(1).item()
+            category_map_recommended.setdefault(category, []).append(product)
+
+        return {"customer_id": customer_id,"Products_bought": list(customer_products),"Category_bought": category_map_bought,"recommended_product": recommendations,"Category_recommend": category_map_recommended}
+    
+    else:
+        category_map_generic = {}
+        top_items = merged_df["Product ID"].value_counts().head(10).index.tolist()
+        # Group generic recommendations by category
+        
+        for product in top_items:
+            category = merged_df[merged_df["Product ID"] == product]["Category"].head(1).item()
+            category_map_generic.setdefault(category, []).append(product)
+
+        return {
+            "customer_id": customer_id,
+            "generic_product": top_items,
+            "Category_recommend": category_map_generic,
+            "message": "No purchase history — showing generic recommendations."
+        }
+
+
+

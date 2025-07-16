@@ -1,6 +1,7 @@
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
 import pandas as pd
+import torch
 
 def load_rules(merged_df,min_support_value=0.002):
     transactions = merged_df.groupby('Order ID')['Product ID'].apply(list).tolist()
@@ -40,3 +41,26 @@ def get_general_recommendations(rules,top_n=3):
             break
     
     return list(recommendations)[:top_n]
+
+def get_recommendations(model, user_sequence, item_encoder, device, top_k=10):
+    model.eval()
+    
+    max_seq_len = 50
+    if len(user_sequence) > max_seq_len:
+        padded_seq = user_sequence[-max_seq_len:]
+    else:
+        padded_seq = [0] * (max_seq_len - len(user_sequence)) + user_sequence
+
+    input_seq = torch.tensor(padded_seq, dtype=torch.long).unsqueeze(0).to(device)
+    
+    with torch.no_grad():
+        outputs = model(input_seq)
+        _, top_k_items = torch.topk(outputs, top_k, dim=1)
+    
+    recommended_items = []
+    for item_id in top_k_items[0].cpu().numpy():
+        if item_id < len(item_encoder.classes_):  # ✅ safe bound check
+            original_item = item_encoder.inverse_transform([item_id])[0]
+            recommended_items.append(original_item)
+    
+    return recommended_items

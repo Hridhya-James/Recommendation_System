@@ -12,7 +12,7 @@ if st.button("Get Recommendation"):
         try:
             print('a')
             if model_choice == "Apriori":
-                fastapi_url = f"http://127.0.0.1:8000/recommend/apriori/{customer_id}?min_support={min_support}"
+                fastapi_url = f"https://fastapi-backend-zdku.onrender.com/recommend/apriori/{customer_id}?min_support={min_support}"
                 response = requests.get(fastapi_url)
                 if response.status_code == 200:
                     data = response.json()
@@ -74,7 +74,7 @@ if st.button("Get Recommendation"):
                     except Exception:
                         st.error(f"Error {response.status_code}: {response.text}")
             else:
-                fastapi_url = f"http://127.0.0.1:8000/recommend/sasrec/{customer_id}"
+                fastapi_url = f"https://fastapi-backend-zdku.onrender.com/recommend/sasrec/{customer_id}"
 
                 response = requests.get(fastapi_url)
                 if response.status_code == 200:

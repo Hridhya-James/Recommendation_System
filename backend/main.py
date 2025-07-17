@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from recommendation import load_rules,get_recommend,get_general_recommendations,get_recommendations
 from data_preprocessor import DataPreprocessor
 from sasrec_model import SASRec
@@ -8,6 +9,17 @@ import torch
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://streamlit-recommender.onrender.com",  
+        "http://localhost:8501",  
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 sasrec_model = None
 preprocessor = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -15,6 +27,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 order_info = pd.read_csv("order_info.csv")
 order_line = pd.read_csv("order_line.csv")
 merged_df = pd.merge(order_info, order_line, on="Order ID", how="inner")
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI backend is running", "status": "OK"}
 
 
 @app.on_event("startup")

@@ -29,25 +29,34 @@ order_line = pd.read_csv("order_line.csv")
 merged_df = pd.merge(order_info, order_line, on="Order ID", how="inner")
 
 @app.get("/")
+@app.head("/")
 def root():
     return {"message": "FastAPI backend is running", "status": "OK"}
 
 
 @app.on_event("startup")
 def load_model():
-    global sasrec_model, preprocessor
+    try:
+        global sasrec_model, preprocessor
 
-    num_users = 992
-    num_items = 199
+        num_users = 992
+        num_items = 199
+        print("Starting model loading...")
+        sasrec_model = SASRec(num_users=num_users,num_items=num_items,hidden_size=64,num_blocks=2,num_heads=1,dropout_rate=0.5,max_seq_len=50).to(device)
+        sasrec_model.load_state_dict(torch.load("sasrec_weights.pth", map_location=device))
+        sasrec_model.eval()
 
-    sasrec_model = SASRec(num_users=num_users,num_items=num_items,hidden_size=64,num_blocks=2,num_heads=1,dropout_rate=0.5,max_seq_len=50).to(device)
-    sasrec_model.load_state_dict(torch.load("sasrec_weights.pth", map_location=device))
-    sasrec_model.eval()
+        with open("preprocessor.pkl", "rb") as f:
+            preprocessor = pickle.load(f)
 
-    with open("preprocessor.pkl", "rb") as f:
-        preprocessor = pickle.load(f)
+        print("SASRec model and preprocessor loaded.")
+    except Exception as e:
+        print(f"Error loading model: {e}")
 
-    print("SASRec model and preprocessor loaded.")
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "FastAPI Recommender Backend"}
+
 
 @app.get("/recommend/apriori/{customer_id}")
 def recommend(customer_id: str, min_support: float = Query(...)):
@@ -93,7 +102,11 @@ def recommend(customer_id: str, min_support: float = Query(...)):
             category = merged_df[merged_df['Product ID'] == product]['Category'].head(1).item()
             category_map_generic.setdefault(category, []).append(product)
         return {"customer_id" : customer_id,"generic_product" : generic_recommended,"Category_recommend":category_map_generic}
-    
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "FastAPI Recommender Backend"}
+
 @app.get("/recommend/sasrec/{customer_id}")
 def recommend_sasrec(customer_id: str):
     global sasrec_model, preprocessor
@@ -145,6 +158,10 @@ def recommend_sasrec(customer_id: str):
             "Category_recommend": category_map_generic,
             "message": "No purchase history — showing generic recommendations."
         }
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "FastAPI Recommender Backend"}
 
 
 

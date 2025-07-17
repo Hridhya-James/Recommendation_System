@@ -56,5 +56,6 @@ watchfiles==1.1.0
 websockets==15.0.1
 mlxtend==0.23.4
 torch==2.7.1
-scikit-learn==1.7.0
+scikit-learn==1.6.1
+
 
